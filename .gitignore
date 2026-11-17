@@ -1,0 +1,16 @@
+bin/
+obj/
+.build/
+.vs/
+*.user
+x64/
+*.pdb
+dist/
+ui/node_modules/
+src/ClearPods/web/
+*.code-workspace
+ERRORS.md
+REVIEW.md
+actions-runner
+CLAUDE.md
+.prettierrc

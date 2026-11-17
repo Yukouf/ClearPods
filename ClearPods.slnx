@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Project Path="src/ClearPods/ClearPods.csproj" />
+  <Project Path="src/ClearPods.Service/ClearPods.Service.csproj" />
+</Solution>

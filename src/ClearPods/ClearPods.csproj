@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\ClearPods.ico</ApplicationIcon>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <!-- DPI awareness is declared in app.manifest (process-wide, before any code) and also set via SetHighDpiMode. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+    <!-- Size: no package XML docs; WebView2Loader.dll only once (NuGet win-x64 asset in the app root). -->
+    <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
+    <WebView2NeverCopyLoaderDllToOutputDirectory>true</WebView2NeverCopyLoaderDllToOutputDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\.build\native\bin\*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\.build\native\bin\DeepFilterNet3_onnx.tar.gz" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Mic mode models, downloaded (native\fetch-models.ps1) -->
+    <Content Include="..\..\.build\native\bin\models\dpdfnet2_48khz_hr.onnx" Link="models\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\.build\native\bin\models\dpdfnet8_48khz_hr.onnx" Link="models\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\.build\native\bin\models\fastenhancer48k_t.onnx" Link="models\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\.build\native\bin\models\fastenhancer48k_b.onnx" Link="models\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\.build\native\bin\models\fastenhancer48k_s.onnx" Link="models\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\.build\native\bin\models\fastenhancer48k_m.onnx" Link="models\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\.build\native\bin\models\fastenhancer48k_l.onnx" Link="models\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\.build\native\bin\models\fevd_gtcrn_spec.onnx" Link="models\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\.build\native\bin\models\gtcrn_simple.onnx" Link="models\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Exported (native\export-models.ps1, run by build.ps1 when missing) -->
+    <Content Include="..\..\.build\native\bin\models\nsnet2_48k.onnx" Link="models\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="web\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Remove="web\**" />
+    <Content Include="locales\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- The WebView2 package also references its WPF control; ClearPods only uses WinForms. -->
+  <Target Name="RemoveWebView2Wpf" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+    </ItemGroup>
+  </Target>
+
+</Project>

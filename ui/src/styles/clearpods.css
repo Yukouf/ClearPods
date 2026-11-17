@@ -1,0 +1,140 @@
+/* ClearPods theme: light and airy. White surfaces, teal accent, rounder shapes, more space, pill controls.
+   Loaded last, so it overrides tokens.css and the component styles. */
+
+:root,
+[data-theme='light'] {
+  --bg-window: #f6f8f8;
+  --surface-card: #ffffff;
+  --surface-card-hover: #f8fbfb;
+  --surface-card-pressed: #f0f6f5;
+  --surface-flyout: #ffffff;
+  --fill-control: #eef3f3;
+  --fill-control-hover: #e4eded;
+  --fill-control-pressed: #d9e5e4;
+  --fill-sunken: #eef3f3;
+  --fill-segment: #ffffff;
+  --switch-off: #dfe7e7;
+  --separator: #edf1f1;
+  --border-subtle: #e2e9e9;
+  --text-primary: #10201f;
+  --text-secondary: #55636a;
+  --text-tertiary: #6b787e;
+  --accent: #0f9488;
+  --accent-hover: #11a497;
+  --accent-pressed: #0c7f75;
+  --accent-disabled: #a7dad5;
+  --on-accent: #ffffff;
+  --accent-text: #0b7a70;
+  --focus-ring: #0f9488;
+  --ring-track: #e6eeee;
+  --shadow-card: 0 1px 2px rgba(16, 32, 31, 0.04), 0 8px 24px rgba(16, 32, 31, 0.05);
+  --shadow-segment: 0 1px 3px rgba(16, 32, 31, 0.12);
+}
+
+[data-theme='dark'] {
+  --bg-window: #0f1515;
+  --surface-card: #172020;
+  --surface-card-hover: #1c2626;
+  --surface-card-pressed: #141c1c;
+  --surface-flyout: #1a2323;
+  --fill-control: #223030;
+  --fill-control-hover: #2a3939;
+  --fill-control-pressed: #1e2b2b;
+  --fill-sunken: #111919;
+  --fill-segment: #2b3b3b;
+  --switch-off: #2a3838;
+  --separator: #223030;
+  --border-subtle: #263434;
+  --text-primary: #eef6f5;
+  --text-secondary: #a7b6b5;
+  --text-tertiary: #8fa09f;
+  --accent: #2dd4bf;
+  --accent-hover: #4fdfcc;
+  --accent-pressed: #22b8a5;
+  --accent-disabled: #1f4a45;
+  --on-accent: #04201c;
+  --accent-text: #5eead4;
+  --focus-ring: #5eead4;
+  --ring-track: #223030;
+  --shadow-card: none;
+}
+
+:root {
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --row-h: 56px;
+  --control-h-md: 36px;
+  --control-h-lg: 44px;
+}
+
+/* More air between sections and inside cards. */
+.wp-page {
+  gap: var(--space-6);
+}
+.wp-group {
+  gap: var(--space-3);
+}
+.wp-group__title {
+  padding-inline: var(--space-2);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.wp-row {
+  padding: var(--space-4) var(--space-5);
+}
+
+/* Hero: no box, the AirPods float on the page with a big title. */
+.wp-hero {
+  background: transparent;
+  box-shadow: none;
+  padding: var(--space-6) var(--space-4) var(--space-2);
+  gap: var(--space-5);
+}
+.wp-hero__art {
+  width: 260px;
+  height: 143px;
+}
+.wp-devswitch__name {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Buttons and segmented controls as pills. */
+.wp-btn {
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-5);
+}
+.wp-seg {
+  padding: 4px;
+  gap: 4px;
+  border-radius: var(--radius-pill);
+}
+.wp-seg__face {
+  border-radius: var(--radius-pill);
+  min-height: 32px;
+}
+.wp-seg__input:checked + .wp-seg__face {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: none;
+  font-weight: 600;
+}
+/* Icon segments (noise control) stay rounded tiles, with the teal disc showing the choice. */
+.wp-seg--icons {
+  border-radius: var(--radius-lg);
+}
+.wp-seg--icons .wp-seg__face {
+  border-radius: 16px;
+}
+.wp-seg--icons .wp-seg__input:checked + .wp-seg__face {
+  background: var(--fill-segment);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-segment);
+}
