@@ -15,6 +15,11 @@ internal sealed class Engine
     // After a wake: how long the adapter is watched for lost state, and how long a command may wait for its answer.
     private static readonly TimeSpan ResumeWatch = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan UnansweredLimit = TimeSpan.FromSeconds(3);
+    // Windows' driver sends its first commands within a second of an attach; none by then means it never started.
+    private static readonly TimeSpan StartWatch = TimeSpan.FromSeconds(20);
+    // At most one host controller restart this often, so a controller that does not recover is not restarted in a loop.
+    private static readonly TimeSpan ControllerRestartWindow = TimeSpan.FromMinutes(10);
+    private DateTime _controllerRestartedAt = DateTime.MinValue;
 
     private readonly HciProxy _hci = new();
     private readonly CancellationTokenSource _stop = new();
@@ -584,6 +589,33 @@ internal sealed class Engine
         }
     }
 
+    /// <summary>
+    /// Checks that Windows started the virtual adapter: without a single HCI command <see cref="StartWatch"/> after the
+    /// attach, Windows failed to enumerate it (seen after a USB/IP drop right before sleep) and Bluetooth is gone from
+    /// Settings until usbip-win2's host controller restarts. The session then ends and the supervisor attaches again.
+    /// </summary>
+    private Timer WatchWindowsStart(RadioLink current)
+    {
+        long before = _hci.CommandCount;
+        return new Timer(_ =>
+        {
+            if (_stop.IsCancellationRequested || Volatile.Read(ref _link) != current || _hci.CommandCount != before)
+            {
+                return;
+            }
+            if (DateTime.UtcNow - _controllerRestartedAt < ControllerRestartWindow)
+            {
+                Log.Warn("engine", $"Windows sent no command to the virtual adapter in {StartWatch.TotalSeconds:F0} s; the host controller was restarted lately, not again");
+                return;
+            }
+            _controllerRestartedAt = DateTime.UtcNow;
+            Log.Info("engine", $"Windows sent no command to the virtual adapter in {StartWatch.TotalSeconds:F0} s: restarting usbip-win2's host controller");
+            _resumeRestart = true;
+            RadioDriver.RestartUsbIpController();
+            current.Dispose();
+        }, null, StartWatch, Timeout.InfiniteTimeSpan);
+    }
+
     // Runs one takeover until the radio or its USB/IP connection goes away; returns why it ended.
     private string RunSession(string id)
     {
@@ -730,6 +762,7 @@ internal sealed class Engine
                 }))
                 {
                     SetState(ServiceState.Running, "");
+                    using Timer startWatch = WatchWindowsStart(current);
                     current.Run();
                 }
             }

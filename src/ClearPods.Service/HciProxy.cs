@@ -108,6 +108,11 @@ internal sealed class HciProxy
         }
     }
 
+    private long _commandCount;
+
+    /// <summary>HCI commands Windows has sent since the service started; Windows' driver starts each adapter with some.</summary>
+    public long CommandCount => Interlocked.Read(ref _commandCount);
+
     /// <summary>Sets the radio link that sends the proxy's packets; null when the radio is detached.</summary>
     public void SetSender(Action<Urb>? send)
     {
@@ -154,6 +159,7 @@ internal sealed class HciProxy
         {
             return false;
         }
+        Interlocked.Increment(ref _commandCount);
         bool held = false;
         ushort opcode = BinaryPrimitives.ReadUInt16LittleEndian(command);
         // Vendor commands (OGF 0x3F) may be answered outside the event pipe (Intel's bootloader answers on the bulk pipe,

@@ -198,6 +198,38 @@ internal static unsafe partial class RadioDriver
     }
 
     /// <summary>
+    /// Restarts usbip-win2's virtual host controller (and so every virtual device on it). Cures a virtual adapter that
+    /// Windows failed to enumerate (shown as USB\VID_0000&amp;PID_0000, CM_PROB_FAILED_POST_START), which no re-attach cures.
+    /// </summary>
+    public static bool RestartUsbIpController()
+    {
+        try
+        {
+            using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = Path.Combine(Environment.SystemDirectory, "pnputil.exe"),
+                ArgumentList = { "/restart-device", "/deviceid", @"ROOT\USBIP_WIN2\UDE" },
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+            });
+            if (process is null)
+            {
+                return false;
+            }
+            process.StandardOutput.ReadToEnd();
+            bool exited = process.WaitForExit(30000);
+            Log.Info("radio", $"restarted usbip-win2's host controller: {(exited ? $"exit {process.ExitCode}" : "timed out")}");
+            return exited && process.ExitCode == 0;
+        }
+        catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            Log.Warn("radio", $"usbip-win2's host controller could not be restarted: {e.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Forgets non-present nodes below <paramref name="instanceId"/>, as Windows numbers a new device ("2- AirPods Pro")
     /// while a node of the same name exists. <paramref name="audioOnly"/> keeps device, HID and LE nodes, whose removal
     /// can unpair them. Present nodes are never touched; returns how many were removed.
