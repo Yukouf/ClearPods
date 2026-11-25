@@ -110,7 +110,10 @@ internal sealed class HciProxy
 
     private long _commandCount;
 
-    /// <summary>HCI commands Windows has sent since the service started; Windows' driver starts each adapter with some.</summary>
+    /// <summary>
+    /// Standard (non-vendor) HCI commands Windows has sent since the service started. Windows' stack starts each
+    /// adapter with HCI_Reset once the vendor driver's own setup succeeded, so none means the start failed.
+    /// </summary>
     public long CommandCount => Interlocked.Read(ref _commandCount);
 
     /// <summary>Sets the radio link that sends the proxy's packets; null when the radio is detached.</summary>
@@ -159,9 +162,12 @@ internal sealed class HciProxy
         {
             return false;
         }
-        Interlocked.Increment(ref _commandCount);
         bool held = false;
         ushort opcode = BinaryPrimitives.ReadUInt16LittleEndian(command);
+        if (opcode >> 10 != 0x3F)
+        {
+            Interlocked.Increment(ref _commandCount);
+        }
         // Vendor commands (OGF 0x3F) may be answered outside the event pipe (Intel's bootloader answers on the bulk pipe,
         // MediaTek's WMT commands through a vendor request): they are not timed.
         if (opcode >> 10 != 0x3F)

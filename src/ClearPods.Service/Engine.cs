@@ -17,9 +17,10 @@ internal sealed class Engine
     private static readonly TimeSpan UnansweredLimit = TimeSpan.FromSeconds(3);
     // Windows' driver sends its first commands within a second of an attach; none by then means it never started.
     private static readonly TimeSpan StartWatch = TimeSpan.FromSeconds(20);
-    // At most one host controller restart this often, so a controller that does not recover is not restarted in a loop.
+    // At most this many start repairs within the window, so an adapter that does not recover is not reset in a loop.
     private static readonly TimeSpan ControllerRestartWindow = TimeSpan.FromMinutes(10);
-    private DateTime _controllerRestartedAt = DateTime.MinValue;
+    private const int MaxStartRepairs = 3;
+    private readonly Queue<DateTime> _startRepairs = new();
 
     private readonly HciProxy _hci = new();
     private readonly CancellationTokenSource _stop = new();
@@ -590,11 +591,13 @@ internal sealed class Engine
     }
 
     /// <summary>
-    /// Checks that Windows started the virtual adapter: without a single HCI command <see cref="StartWatch"/> after the
-    /// attach, Windows failed to enumerate it (seen after a USB/IP drop right before sleep) and Bluetooth is gone from
-    /// Settings until usbip-win2's host controller restarts. The session then ends and the supervisor attaches again.
+    /// Checks that Windows started the virtual adapter: without a standard HCI command <see cref="StartWatch"/> after
+    /// the attach, the start failed and Bluetooth is gone from Settings. Seen twice: Windows never enumerated the device
+    /// after a USB/IP drop (needs usbip-win2's host controller restarted), and Intel's driver gave up (code 10) when the
+    /// chip, left half set up, refused its first vendor command (needs the real chip reset). Both are done; the session
+    /// then ends and the supervisor attaches again.
     /// </summary>
-    private Timer WatchWindowsStart(RadioLink current)
+    private Timer WatchWindowsStart(RadioLink current, string id)
     {
         long before = _hci.CommandCount;
         return new Timer(_ =>
@@ -603,15 +606,26 @@ internal sealed class Engine
             {
                 return;
             }
-            if (DateTime.UtcNow - _controllerRestartedAt < ControllerRestartWindow)
+            lock (_startRepairs)
             {
-                Log.Warn("engine", $"Windows sent no command to the virtual adapter in {StartWatch.TotalSeconds:F0} s; the host controller was restarted lately, not again");
-                return;
+                while (_startRepairs.Count > 0 && DateTime.UtcNow - _startRepairs.Peek() > ControllerRestartWindow)
+                {
+                    _startRepairs.Dequeue();
+                }
+                if (_startRepairs.Count >= MaxStartRepairs)
+                {
+                    Log.Warn("engine", $"Windows did not start the virtual adapter in {StartWatch.TotalSeconds:F0} s; already repaired {MaxStartRepairs} times within {ControllerRestartWindow.TotalMinutes:F0} min, not again");
+                    return;
+                }
+                _startRepairs.Enqueue(DateTime.UtcNow);
             }
-            _controllerRestartedAt = DateTime.UtcNow;
-            Log.Info("engine", $"Windows sent no command to the virtual adapter in {StartWatch.TotalSeconds:F0} s: restarting usbip-win2's host controller");
+            Log.Info("engine", $"Windows did not start the virtual adapter in {StartWatch.TotalSeconds:F0} s: restarting usbip-win2's host controller and resetting the adapter");
             _resumeRestart = true;
             RadioDriver.RestartUsbIpController();
+            if (!RadioDriver.CyclePort(id))
+            {
+                Log.Warn("radio", "the adapter's USB port could not be reset");
+            }
             current.Dispose();
         }, null, StartWatch, Timeout.InfiniteTimeSpan);
     }
@@ -762,7 +776,7 @@ internal sealed class Engine
                 }))
                 {
                     SetState(ServiceState.Running, "");
-                    using Timer startWatch = WatchWindowsStart(current);
+                    using Timer startWatch = WatchWindowsStart(current, id);
                     current.Run();
                 }
             }

@@ -98,6 +98,18 @@
   width: 260px;
   height: 143px;
 }
+/* Photo hero: white earbuds keep their edge on light cards through a soft shadow. */
+.wp-hero__photo {
+  width: auto;
+  height: 168px;
+  max-width: 100%;
+  object-fit: contain;
+  margin-inline: auto;
+  filter: drop-shadow(0 6px 10px rgb(15 40 38 / 0.16)) drop-shadow(0 1px 2px rgb(15 40 38 / 0.12));
+}
+[data-theme='dark'] .wp-hero__photo {
+  filter: drop-shadow(0 8px 16px rgb(0 0 0 / 0.45));
+}
 .wp-devswitch__name {
   font-family: var(--font-display);
   font-size: 28px;

@@ -186,7 +186,33 @@ export const createHome = (ctx: Ctx): Page => {
   let keysHint!: HTMLParagraphElement;
   let actions!: HTMLDivElement;
   let action!: HTMLButtonElement;
-  let art = Art({ model: 'pro', class: 'wp-hero__art' });
+  // Earbud models show the photo shipped as web/hero.png (ui/local/hero.png, never committed) when the build has one,
+  // else the drawn art.
+  const heroArt = (model: Parameters<typeof Art>[0]['model']): Element => {
+    const drawn = (): SVGSVGElement => Art({ model, class: 'wp-hero__art' });
+    if (model === 'max' || model === 'empty') {
+      return drawn();
+    }
+    const photo = document.createElement('img');
+    photo.className = 'wp-hero__art wp-hero__photo';
+    photo.alt = '';
+    photo.decoding = 'async';
+    photo.addEventListener(
+      'error',
+      () => {
+        const fallback = drawn();
+        fallback.setAttribute('aria-label', photo.getAttribute('aria-label') ?? '');
+        photo.replaceWith(fallback);
+        if (art === photo) {
+          art = fallback;
+        }
+      },
+      { once: true },
+    );
+    photo.src = 'hero.png';
+    return photo;
+  };
+  let art: Element = heroArt('pro');
   let artModel = 'pro';
 
   const menu = createDeviceMenu({
@@ -582,7 +608,7 @@ export const createHome = (ctx: Ctx): Page => {
     const st = live(d);
     if (d.art !== artModel) {
       artModel = d.art;
-      const next = Art({ model: d.art, class: 'wp-hero__art' });
+      const next = heroArt(d.art);
       art.replaceWith(next);
       art = next;
     }

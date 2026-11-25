@@ -49,6 +49,14 @@ const result = await build({
 for (const page of ['index.html', 'popup.html', 'osd.html']) {
   await copyFile(path.join(src, 'shell', page), path.join(out, page));
 }
+// Optional local hero photo (ui/local is git-ignored): the home page falls back to the drawn art without it.
+await copyFile(path.join(here, 'local/hero.png'), path.join(out, 'hero.png')).catch(
+  (e) => {
+    if (e.code !== 'ENOENT') {
+      throw e;
+    }
+  },
+);
 
 // The UI keeps element references instead of searching the DOM or parsing markup.
 for (const [file, info] of Object.entries(result.metafile.outputs)) {

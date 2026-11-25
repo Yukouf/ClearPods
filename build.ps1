@@ -4,7 +4,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 
-$Version = '1.0.1' # the only place the product version is defined (app and installer)
+$Version = '1.0.2' # the only place the product version is defined (app and installer)
 
 $root = $PSScriptRoot
 $build = Join-Path $root '.build'
